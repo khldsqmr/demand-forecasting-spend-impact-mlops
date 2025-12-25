@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .DS_Store
 .env
+# Local data generation (upstream / not part of ML system)
+src/data_generation.py
+_local_data_generation/
+upstream_data/
