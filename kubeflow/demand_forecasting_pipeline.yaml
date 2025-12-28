@@ -1,0 +1,189 @@
+# PIPELINE DEFINITION
+# Name: demand-forecasting-spend-impact-pipeline
+# Description: End-to-end ML pipeline for demand forecasting and financial impact analysis
+components:
+  comp-feature-engineering-op:
+    executorLabel: exec-feature-engineering-op
+  comp-financial-impact-op:
+    executorLabel: exec-financial-impact-op
+  comp-generate-predictions-op:
+    executorLabel: exec-generate-predictions-op
+  comp-train-baseline-model-op:
+    executorLabel: exec-train-baseline-model-op
+deploymentSpec:
+  executors:
+    exec-feature-engineering-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - feature_engineering_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' 'joblib'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef feature_engineering_op():\n    \"\"\"Run feature engineering\"\
+          \"\"\n    import subprocess\n    print(\"\U0001F680 Running feature engineering\
+          \ step\")\n    subprocess.run(\n        [\"python\", \"src/features/feature_engineering.py\"\
+          ],\n        check=True\n    )\n    print(\"\u2705 Feature engineering completed\"\
+          )\n\n"
+        image: python:3.9
+    exec-financial-impact-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - financial_impact_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.15.2'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
+          $0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef financial_impact_op():\n    \"\"\"Run financial impact analysis\"\
+          \"\"\n    import subprocess\n    print(\"\U0001F680 Running financial impact\
+          \ analysis\")\n    subprocess.run(\n        [\"python\", \"src/evaluation/spend_impact.py\"\
+          ],\n        check=True\n    )\n    print(\"\u2705 Financial impact analysis\
+          \ completed\")\n\n"
+        image: python:3.9
+    exec-generate-predictions-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - generate_predictions_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' 'joblib'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef generate_predictions_op():\n    \"\"\"Generate baseline predictions\"\
+          \"\"\n    import subprocess\n    print(\"\U0001F680 Generating baseline\
+          \ predictions\")\n    subprocess.run(\n        [\"python\", \"src/models/generate_baseline_predictions.py\"\
+          ],\n        check=True\n    )\n    print(\"\u2705 Predictions generated\"\
+          )\n\n"
+        image: python:3.9
+    exec-train-baseline-model-op:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_baseline_model_op
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas' 'numpy'\
+          \ 'scikit-learn' 'joblib'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_baseline_model_op():\n    \"\"\"Train final baseline model\"\
+          \"\"\n    import subprocess\n    print(\"\U0001F680 Training final baseline\
+          \ model\")\n    subprocess.run(\n        [\"python\", \"src/models/train_final_baseline.py\"\
+          ],\n        check=True\n    )\n    print(\"\u2705 Model training completed\"\
+          )\n\n"
+        image: python:3.9
+pipelineInfo:
+  description: End-to-end ML pipeline for demand forecasting and financial impact
+    analysis
+  name: demand-forecasting-spend-impact-pipeline
+root:
+  dag:
+    tasks:
+      feature-engineering-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-feature-engineering-op
+        taskInfo:
+          name: feature-engineering-op
+      financial-impact-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-financial-impact-op
+        dependentTasks:
+        - generate-predictions-op
+        taskInfo:
+          name: financial-impact-op
+      generate-predictions-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-generate-predictions-op
+        dependentTasks:
+        - train-baseline-model-op
+        taskInfo:
+          name: generate-predictions-op
+      train-baseline-model-op:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-baseline-model-op
+        dependentTasks:
+        - feature-engineering-op
+        taskInfo:
+          name: train-baseline-model-op
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.15.2
