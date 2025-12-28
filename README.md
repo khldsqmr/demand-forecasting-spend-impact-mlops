@@ -1,65 +1,115 @@
 # Demand Forecasting & Marketing Spend Impact (MLOps)
 
-## Overview
-This repository demonstrates an **end-to-end demand forecasting and spend impact system** designed using modern MLOps principles.
+## Executive Summary
 
-The goal is not only to forecast demand, but to **translate forecast accuracy into business and financial impact**, enabling better marketing budget allocation, operational planning, and ROI optimization.
+This repository demonstrates a **production-grade demand forecasting system** designed using modern **MLOps and decision-science principles**.
 
-This project emphasizes:
-- Realistic data behavior
-- Business-aligned modeling assumptions
-- Production-ready system design
-- Clear separation between data, modeling, and orchestration
+The system goes beyond traditional forecast accuracy metrics and **quantifies forecast error directly in financial terms**, enabling better decisions around marketing spend, inventory planning, and operational risk.
+
+### Key Outcomes
+
+| Metric | Result |
+|------|--------|
+| Average WAPE (TimeSeries CV) | **0.46%** |
+| Best Fold WAPE | 0.09% |
+| Worst Fold WAPE | 0.80% |
+| Total Forecast Cost | **$264,345** |
+| Under-Forecast Cost Share | **~74%** |
+
+**Key Insight:**  
+Under-forecasting is significantly more expensive than over-forecasting, highlighting the need for **cost-aware modeling**, not just accuracy optimization.
 
 ---
 
 ## Business Problem
 
 Marketing and operations teams rely on demand forecasts to:
+
 - Allocate marketing budgets across channels
 - Plan inventory, staffing, and fulfillment
 - Optimize spend efficiency and ROI
 
-Forecast errors are **asymmetric**:
-- **Over-forecasting** → wasted spend, excess capacity
-- **Under-forecasting** → lost revenue, missed demand
+However, **forecast errors are asymmetric**:
 
-This system explicitly models:
-- Baseline (organic) demand
-- Incremental demand driven by marketing spend
-- Lagged and diminishing returns
-- Macro-economic effects on demand
+| Error Type | Business Impact |
+|---------|----------------|
+| Over-forecasting | Wasted marketing spend, excess capacity |
+| Under-forecasting | Lost revenue, missed demand |
+
+Most forecasting systems stop at MAE / RMSE.  
+This system explicitly models **error asymmetry** and converts forecast performance into **dollars at risk**.
+
+---
+
+## Results & Financial Impact
+
+### Forecast Accuracy (Leakage-Safe Evaluation)
+
+Forecasts were evaluated using **TimeSeriesSplit cross-validation**, ensuring:
+
+- No future leakage
+- Realistic production-like evaluation
+- Stable performance across time
+
+#### Cross-Validation Summary
+
+| Metric | Value |
+|------|------|
+| Average WAPE | **0.46%** |
+| Std Dev (WAPE) | 0.33% |
+| Best Fold | 0.09% |
+| Worst Fold | 0.80% |
+
+---
+
+### Financial Impact of Forecast Errors
+
+Using explicit business cost assumptions:
+
+| Metric | Value |
+|------|------|
+| Total Actual Demand | 5,445,072 units |
+| Total Predicted Demand | 5,444,953 units |
+| Under-Forecast Units | 2,435.69 |
+| Over-Forecast Units | 2,316.33 |
+| Under-Forecast Cost | **$194,855** |
+| Over-Forecast Cost | $69,490 |
+| **Total Forecast Cost** | **$264,345** |
 
 ---
 
 ## Data Architecture
 
-### Upstream Data (Production Concept)
-In a real production environment, data would be sourced from:
-- Marketing platforms (search, social, display, CRM)
-- Analytics pipelines
-- Public macro-economic APIs
+### Production Concept (Upstream)
+
+In a real deployment, data would be ingested from:
+
+- Marketing platforms (Search, Social, Display, CRM)
+- Digital analytics pipelines
+- Public macroeconomic APIs
 - Centralized data warehouse (e.g. BigQuery)
 
+---
+
 ### Demonstration Setup (This Repository)
+
 To keep the project:
+
 - Reproducible
-- Reviewable
 - Lightweight
+- Review-friendly
 
-This repository uses **representative CSV snapshots** that simulate BigQuery exports.
+The system uses **representative CSV snapshots** that simulate BigQuery exports.
 
-> The focus is on **forecasting logic, feature engineering, and business impact** — not raw ingestion mechanics.
+> Focus is on **forecasting logic, feature engineering, and business impact** — not ingestion mechanics.
 
 ---
 
 ## Data Domains
 
-The system operates across four core data domains:
-
 | Domain | Description |
 |------|------------|
-| Baseline Demand | Organic demand influenced by macro factors |
+| Baseline Demand | Organic demand driven by macro factors |
 | Marketing Spend | Channel-level spend and response |
 | Product Mix | Allocation of demand across products |
 | Macroeconomics | External demand drivers |
@@ -69,69 +119,122 @@ The system operates across four core data domains:
 ## Dataset Breakdown
 
 ### 1️⃣ Country-Level Demand & Macro Data
-**File:** `data/raw/demand_spend_country_daily.csv`
+**Path:** `data/raw/demand_spend_country_daily.csv`
 
-**Key fields:**
-- `DATE`
-- `COUNTRY`
-- `ECONOMIC_INDEX`
-- `INFLATION_RATE`
-- `UNEMPLOYMENT_RATE`
-- `BASELINE_DEMAND`
+| Column | Description |
+|------|------------|
+| DATE | Observation date |
+| COUNTRY | Market |
+| ECONOMIC_INDEX | Composite economic signal |
+| INFLATION_RATE | Inflation |
+| UNEMPLOYMENT_RATE | Labor market signal |
+| BASELINE_DEMAND | Organic demand |
 
 ---
 
 ### 2️⃣ Channel-Level Spend Response
-**File:** `data/processed/demand_spend_by_channel_daily.csv`
+**Path:** `data/processed/demand_spend_by_channel_daily.csv`
 
-**Key fields:**
-- `DATE`
-- `COUNTRY`
-- `CHANNEL`
-- `SPEND`
-- `CHANNEL_RESPONSE`
+| Column | Description |
+|------|------------|
+| DATE | Date |
+| COUNTRY | Market |
+| CHANNEL | Marketing channel |
+| SPEND | Daily spend |
+| CHANNEL_RESPONSE | Modeled response |
 
-Models diminishing returns and lag effects.
+Includes **lag effects** and **diminishing returns**.
 
 ---
 
 ### 3️⃣ Product-Level Demand Allocation
-**File:** `data/processed/demand_by_product_daily.csv`
+**Path:** `data/processed/demand_by_product_daily.csv`
 
-**Key fields:**
-- `DATE`
-- `COUNTRY`
-- `PRODUCT`
-- `PRODUCT_DEMAND`
+| Column | Description |
+|------|------------|
+| DATE | Date |
+| COUNTRY | Market |
+| PRODUCT | Product |
+| PRODUCT_DEMAND | Allocated demand |
 
 ---
 
 ### 4️⃣ Model Training Dataset
-**File:** `data/processed/model_training_dataset.csv`
+**Path:** `data/processed/model_training_dataset.csv`
 
-Feature-engineered dataset containing:
-- Aggregated spend & response
+Aggregated, model-ready dataset including:
+
+- Spend aggregation
 - Lagged features
 - Rolling demand windows
 
-Used for forecasting and impact modeling.
-
 ---
 
-## Data Validation & Analysis
+## Data Validation & Quality Checks
 
 **Notebook:** `analysis/data_validation.ipynb`
 
-This notebook validates:
+Validates:
+
 - Data completeness
 - Statistical realism
 - Spend-response correlation
 - Diminishing returns behavior
 - Product mix consistency
-- Feature distributions
-- Lag and rolling feature integrity
+- Lag & rolling feature integrity
 
-The notebook serves as a **data contract and sanity check** before modeling.
+Acts as a **data contract** before modeling.
+
+---
+
+## Feature Engineering
+
+**Module:** `src/features/feature_engineering.py`
+
+Features include:
+
+- Calendar seasonality (cyclical encoding)
+- Spend efficiency metrics
+- Macro × demand interactions
+- Trend & momentum signals
+
+Design principles:
+
+- Deterministic
+- No data leakage
+- Explainable
+- Production-safe
+
+---
+
+## Modeling Approach
+
+### Baseline Model
+- Algorithm: **RandomForestRegressor**
+- Evaluation: **TimeSeriesSplit**
+- Training:
+  - Cross-validated baseline
+  - Final model trained on full history
+
+### Artifacts
+- Trained model
+- Encoder
+- Feature metadata
+
+---
+
+## Financial Impact Analysis
+
+**Module:** `src/evaluation/spend_impact.py`
+
+Computes:
+
+- Forecast error by direction
+- Cost of under-forecasting
+- Cost of over-forecasting
+- Aggregate forecast cost
+
+This reframes forecasting as a **risk management problem**, not just prediction.
 
 ---
 
@@ -140,57 +243,30 @@ The notebook serves as a **data contract and sanity check** before modeling.
 ### Containerization (`docker/`)
 - Dockerfile templates included
 - Demonstrates environment reproducibility
-- Not built or pushed in this demo
-
----
 
 ### Orchestration (`kubeflow/`)
-- Conceptual Kubeflow pipeline definitions
-- Shows how training and forecasting would be orchestrated
-- Included for architectural clarity, not execution
-
----
+- Conceptual Kubeflow pipeline
+- Included for architectural clarity
 
 ### Infrastructure (`terraform/`)
-- GCP-oriented infrastructure layout
+- GCP-oriented IaC layout
 - Demonstrates production readiness
-- Not applied or deployed
 
 ---
 
-## Execution Model (Production Intent)
+## Execution Flow
 
-In a production environment, the system would:
-1. Ingest new data into BigQuery
-2. Trigger feature pipelines
-3. Retrain models on schedule
-4. Generate demand forecasts
-5. Quantify financial impact of forecast errors
-6. Feed results into planning & budgeting workflows
-
----
-
-## Notes on Data
-All data in this repository is **synthetic but statistically realistic**, created solely for demonstration purposes.
-
-No proprietary or confidential data is used.
-
----
-
-## Future Extensions
-- Model benchmarking (ARIMA, Prophet, ML, DL)
-- Budget optimization simulations
-- Automated retraining pipelines
-- Forecast monitoring & drift detection
-- Full Kubeflow pipeline execution
-
----
-
-## Key Takeaway
-This project demonstrates **how a production-grade forecasting system should be designed**, not just how to train a model.
-
-It bridges:
-- Data engineering
-- Forecasting
-- Business impact
-- MLOps architecture
+```text
+Raw Data Generation
+        ↓
+Data Validation
+        ↓
+Feature Engineering
+        ↓
+TimeSeries Cross-Validation
+        ↓
+Final Model Training
+        ↓
+Baseline Predictions
+        ↓
+Financial Impact Analysis
