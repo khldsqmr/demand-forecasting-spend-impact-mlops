@@ -30,28 +30,6 @@ This system explicitly models:
 
 ---
 
-## System Architecture
-
-```text
-Raw Data (CSV / BigQuery exports)
-↓
-Data Validation & Sanity Checks
-↓
-Feature Engineering
-↓
-Baseline Model Training (TimeSeries CV)
-↓
-Final Model Training
-↓
-Demand Predictions
-↓
-Financial Impact Analysis
-↓
-Kubeflow Pipeline (Orchestration)
-
-
----
-
 ## Data Architecture
 
 ### Demonstration Setup
@@ -195,4 +173,23 @@ This project demonstrates **how forecasting systems should be built in productio
 - Budget optimization simulations
 - Forecast drift monitoring
 
+
+## System Architecture
+
+```text
+Raw Data (CSV / BigQuery exports)
+↓
+Data Validation & Sanity Checks
+↓
+Feature Engineering
+↓
+Baseline Model Training (TimeSeries CV)
+↓
+Final Model Training
+↓
+Demand Predictions
+↓
+Financial Impact Analysis
+↓
+Kubeflow Pipeline (Orchestration)
 
